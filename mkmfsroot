@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+#
+# Based on https://doc.m0n0.ch/dev/image-guide-mfsroot.html
+#
+set -e
+
+RELEASE=${RELEASE:-14.0-CURRENT}
+DOWNLOAD_URL=https://download.freebsd.org/snapshots/arm64/aarch64/${RELEASE}
+     
+if [ ! -f ./base.txz ]; then
+    fetch -m -o ./base.txz ${DOWNLOAD_URL}/base.txz
+fi
+
+# First of all, a zero-filled image file needs to be created.
+# Image size should be enough to fit all the files in the root
+# file system. If you add big components, you may need to
+# increase this. However, don't make it much bigger than necessary,
+# as the MFS will take up as much space as you specify here,
+# even if the file system is not full.
+dd if=/dev/zero of=mfsroot bs=1k count=65536
+
+# Now we'll use mdconfig to attach the file to /dev/md0:
+mdconfig -a -t vnode -f mfsroot
+
+# After that, it's possible to use disklabel and newfs to create
+# an UFS file system, and mount it:
+disklabel -rw md0 auto
+newfs -o space -m 0 /dev/md0
+mount /dev/md0 /mnt
+
+# Extract the base file system into /mnt, omitting /rescue and /usr,
+# so that the image size could be small enough for the SPI flash chip:
+BASE=$(pwd)/base.txz
+pushd /mnt
+tar -xpf $BASE --strip-components=1 --exclude='./rescue' --exclude='./usr'
+
+# /dev, /tmp and /proc must always be present
+# https://forums.FreeBSD.org/threads/a-problem-with-booting-freebsd-on-zfs.69726/post-450304
+if [ ! -e dev ]; then
+    mkdir dev
+fi
+if [ ! -e tmp ]; then
+    mkdir tmp
+fi
+if [ ! -e proc ]; then
+    mkdir proc
+fi
+
+# Cleaning up and compressing the image (step out of /mnt first):
+popd
+
+umount /mnt
+mdconfig -d -u 0
+
+#lzma -f -z -k -9 -e mfsroot
+#cwd=$(pwd)
+#sudo -i -u marcusmae scp $cwd/mfsroot.lzma m17:/home/marcusmae/forge/docker-tftpd/tftpboot/
+
