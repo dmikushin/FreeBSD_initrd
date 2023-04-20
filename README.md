@@ -1,4 +1,4 @@
-# FreeBSD ARM64 mfsroot
+# Initial RAM disk for FreeBSD ARM64
 
 This script generates an initial RAM disk for embedded FreeBSD ARM64 target.
 
@@ -9,7 +9,7 @@ It is a simplification of [mfsBSD](http://mfsbsd.vx.sk) project. Here we don't d
 Currently, a FreeBSD base system is required, because BSD-specific disk management tools are used:
 
 ```
-sudo ./mkmfsroot
+sudo ./mkufsroot
 ```
 
 Perhaps, we can [use ext2](https://pub.nethence.com/xen/guest-freebsd-ext2fs) and [e2tools](https://e2tools.github.io/) to make it Linux-compatible?
