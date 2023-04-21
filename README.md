@@ -6,7 +6,7 @@ It is a simplification of [mfsBSD](http://mfsbsd.vx.sk) project. Here we don't d
 
 ## Building
 
-Create EXT2 initial RAM disk in Linux:
+Create EXT2 initial RAM disk in Linux (does not work, because FreeBSD expects only UFS):
 
 ```
 ./mkext2root
