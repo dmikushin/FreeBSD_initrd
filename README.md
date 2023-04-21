@@ -2,19 +2,23 @@
 
 This script generates an initial RAM disk for embedded FreeBSD ARM64 target.
 
-It is a simplification of [mfsBSD](http://mfsbsd.vx.sk) project. Here we don't do any GPT, EFI or ISO-related work, because our goal is to create a disk image that could be bundled with kernel and dtb into a single U-boot FIT image/
+It is a simplification of [mfsBSD](http://mfsbsd.vx.sk) project. Here we don't do any GPT, EFI or ISO-related work, because our goal is to create a disk image that could be bundled with kernel and dtb into a single U-boot FIT image.
 
 ## Building
 
-Currently, a FreeBSD base system is required, because BSD-specific disk management tools are used:
+Create EXT2 initial RAM disk in Linux:
+
+```
+./mkext2root
+```
+
+Create UFS initial RAM disk in FreeBSD:
 
 ```
 sudo ./mkufsroot
 ```
 
-Perhaps, we can [use ext2](https://pub.nethence.com/xen/guest-freebsd-ext2fs) and [e2tools](https://e2tools.github.io/) to make it Linux-compatible?
-
-## Example
+## Usage
 
 Make a FIT U-boot image with kernel, dts and mfsroot image created by this script:
 

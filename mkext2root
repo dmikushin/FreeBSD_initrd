@@ -8,7 +8,7 @@ RELEASE=${RELEASE:-14.0-CURRENT}
 DOWNLOAD_URL=https://download.freebsd.org/snapshots/arm64/aarch64/${RELEASE}
      
 if [ ! -f ./base.txz ]; then
-    fetch -m -o ./base.txz ${DOWNLOAD_URL}/base.txz
+    wget -O ./base.txz ${DOWNLOAD_URL}/base.txz
 fi
 
 # First of all, a zero-filled image file needs to be created.
@@ -19,33 +19,25 @@ fi
 # even if the file system is not full.
 dd if=/dev/zero of=mfsroot bs=1k count=65536
 
-# Now we'll use mdconfig to attach the file to /dev/md0:
-mdconfig -a -t vnode -f mfsroot
+# Now we'll use mkfs.ext2 to create filesystem inside image file:
+mkfs.ext2 -F mfsroot
 
-# After that, it's possible to use disklabel and newfs to create
-# an UFS file system, and mount it:
-disklabel -rw md0 auto
-newfs -o space -m 0 /dev/md0
-mount /dev/md0 /mnt
-
-# Extract the base file system into /mnt, omitting /rescue and /usr,
+# Extract the base file system into the filesystem, omitting /rescue and /usr,
 # so that the image size could be small enough for the SPI flash chip:
 BASE=$(pwd)/base.txz
-pushd /mnt
-tar -xpf $BASE --exclude='./rescue' --exclude='./usr'
+mkdir -p base
+bsdtar -xpf $BASE -C ./base --exclude='./rescue' --exclude='./usr' --exclude='./sys'
+pushd base
+find . -type f | e2cp -ap -d ../mfsroot:/
 
 # /dev, /tmp and /proc must always be present
 # https://forums.FreeBSD.org/threads/a-problem-with-booting-freebsd-on-zfs.69726/post-450304
-mkdir -p dev
-mkdir -p proc
-mkdir -p tmp
-mkdir -p usr
+e2mkdir ../mfsroot:/dev
+e2mkdir ../mfsroot:/proc
+e2mkdir ../mfsroot:/tmp
+e2mkdir ../mfsroot:/usr
 
-# Cleaning up and compressing the image (step out of /mnt first):
 popd
-
-umount /mnt
-mdconfig -d -u 0
 
 #lzma -f -z -k -9 -e mfsroot
 #cwd=$(pwd)
